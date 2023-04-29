@@ -1,0 +1,14 @@
+{
+  "name": "face-pay-in-metro",
+  "version": "1.0.0",
+  "description": "[![forthebadge](https://forthebadge.com/images/badges/made-with-python.svg)](https://forthebadge.com)",
+  "main": "train_server.py",
+  "scripts": {
+    "start": "nodemon train_server.py"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "nodemon": "^2.0.22"
+  }
+}
