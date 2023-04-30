@@ -55,6 +55,10 @@ def index():
 
 
 if __name__ == '__main__':
+    if 'encodings' not in os.listdir():
+        os.makedirs('encodings')
+    if 'Faces' not in os.listdir():
+        os.makedirs('Faces')
     try:
         app.run(port=9000)
     except:
