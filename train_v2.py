@@ -20,7 +20,10 @@ import bson
 import time
 import datetime
 
-client = MongoClient('mongodb://127.0.0.1:27017')
+local = 'mongodb://127.0.0.1:27017'
+server = 'mongodb+srv://usn012y2018:facepay1@facepay.y1chyja.mongodb.net/?retryWrites=true&w=majority'
+
+client = MongoClient(server)
 database = client.facepay
 
 

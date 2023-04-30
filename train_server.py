@@ -25,11 +25,11 @@ user_id = 'user_id'
 def index():
     req_body = request.json
     user_user_id = req_body[user_id]
-    # if user_user_id not in os.listdir('./Faces'):
-    #     os.mkdir(f'./Faces/{user_user_id}')
+    if user_user_id not in os.listdir('./Faces'):
+        os.mkdir(f'./Faces/{user_user_id}')
     imgs = []
     collection = database.images
-    cursor = collection.find()
+    cursor = collection.find({"user_id": user_user_id})
     for val in cursor:
         imgs.append(val['img'])
     for index, val in enumerate(imgs):
@@ -41,7 +41,7 @@ def index():
             format = 'jpg'
         elif re.search('png', val[0:100]):
             format = 'png'
-        img_file = open(f'./Faces/{user_user_id}/{req_body[user_id]}{str(index)}.{format}', 'wb')
+        img_file = open(f'./Faces/{user_user_id}/{user_user_id}{str(index)}.{format}', 'wb')
         img_file.write(decoded_data)
         img_file.close()
     return_val = [None] * 1
