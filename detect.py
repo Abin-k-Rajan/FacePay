@@ -11,6 +11,8 @@ from facenet_pytorch import MTCNN
 from pymongo import MongoClient
 import json
 import os
+from datetime import datetime
+import threading
 
 
 import numpy as np
@@ -23,6 +25,7 @@ import math
 
 import pickle
 
+encoding_dict = {}
 
 client = MongoClient('mongodb://127.0.0.1:27017')
 database = client.facepay
@@ -35,13 +38,49 @@ encodings = []
 def get_all_encodings_from_db():
     collection = database.encoding
     encodings = collection.find()
-    with open(path, 'wb') as file:
-        for encoding in encodings:
-            enc = encoding['encoding']
-            enc = enc
-            enc = json.loads(enc)
+    _encodings = {}
+    for encode in encodings:
+        _encodings[encode['user_id']] = encode['encoding']
+    for user_id, encode in _encodings.items():
+        with open(f'{encodings_path}/{user_id}.pkl', 'wb') as file:
+            enc = {}
+            enc[user_id] = encode
             pickle.dump(enc, file)
-        
+
+def get_encoding_from_timestamp(timestamp):
+    collection = database.encoding
+    try:
+        encodings = collection.find({"last-update": { "$gte" : datetime.fromisoformat(timestamp)}})
+        _encodings = {}
+        for encode in encodings:
+            _encodings[encode['user_id']] = encode['encoding']
+        for user_id, encode in _encodings.items():
+            with open(f'{encodings_path}/{user_id}.pkl', 'wb') as file:
+                enc = {}
+                enc[user_id] = encode
+                pickle.dump(enc, file)
+        return {"status": True, "message": str(_encodings)}
+    except Exception as e:
+        return {"status": False, "message" : f'Exception getting encodings {e}'}
+    
+
+def get_encoding_for_user(user_id):
+    collection = database.encoding
+    try:
+        encodings = collection.find({"user_id": user_id})
+        _encodings = {}
+        for encode in encodings:
+            _encodings[encode['user_id']] = encode['encoding']
+        for user_id, encode in _encodings.items():
+            with open(f'{encodings_path}/{user_id}.pkl', 'wb') as file:
+                enc = {}
+                enc[user_id] = encode
+                pickle.dump(enc, file)
+        t = threading.Thread(target=load_pickle)
+        t.start()
+        return {"status": True, "message": str(_encodings)}
+    except Exception as e:
+        return {"status": False, "message" : f'Exception getting encodings {e}'}
 
 print("PyTorch version:", torch.__version__)
 print("CUDA version:", torch.version.cuda)
@@ -81,19 +120,21 @@ def get_encode(face_encoder, face, size):
     return encode
 
 
-def load_pickle(path):
-    encoding_dict = {}
+def load_pickle(path=''):
+    global encoding_dict
     for enc in os.listdir(f'./{encodings_path}'):
+        if enc == '.git':
+            continue
         with open(f'./{encodings_path}/{enc}', 'rb') as f:
             encodings.append(pickle.load(f))
     for enc in encodings:
         for name, encode in enc.items():
             encoding_dict[name] = encode
-    return encoding_dict
 
 
 
-def detect(img ,detector,encoder,encoding_dict):
+def detect(img ,detector,encoder):
+    global encoding_dict
     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     mp_face_detection = mp.solutions.face_detection
     mtcnn = MTCNN()
@@ -102,6 +143,9 @@ def detect(img ,detector,encoder,encoding_dict):
     # for res in results:
     #     if res['confidence'] < confidence_t:
     #         continue
+    name = 'unknown'
+    distance = 0
+    img = img_rgb
     if face is None:
         pass
     else:
@@ -124,7 +168,7 @@ def detect(img ,detector,encoder,encoding_dict):
             cv2.rectangle(img, pt_1, pt_2, (0, 255, 0), 2)
             cv2.putText(img, name + f'__{distance:.2f}', (pt_1[0], pt_1[1] - 5), cv2.FONT_HERSHEY_SIMPLEX, 1,
                         (0, 200, 200), 2)
-    return img 
+    return {"img": img, "name": name, "dist": distance} 
 
 
 def detect_opencv(img, coords, encoder, encoding_dict):
@@ -159,13 +203,14 @@ def detect_opencv(img, coords, encoder, encoding_dict):
 
 
 if __name__ == "__main__":
+    get_all_encodings_from_db()
     required_shape = (160,160)
     face_encoder = InceptionResNetV2()
     path_m = "facenet_keras_weights.h5"
     face_encoder.load_weights(path_m)
     encodings_path = './encodings'
     face_detector = mtcnn.MTCNN()
-    encoding_dict = load_pickle(encodings_path)
+    load_pickle(encodings_path)
     
     cap = cv2.VideoCapture(0)
     frames = []
@@ -177,14 +222,13 @@ if __name__ == "__main__":
             print("CAM NOT OPEND") 
             break
         # coords = face_cascade.detectMultiScale(frame,scaleFactor=1.1, minNeighbors=5)
-        frame= detect(frame , face_detector , face_encoder , encoding_dict)
+        frame= detect(frame , face_detector , face_encoder)
         # frame = detect_opencv(frame, coords, face_encoder , encoding_dict)
 
         cv2.imshow('camera', frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-    # get_all_encodings_from_db()
     
 
 

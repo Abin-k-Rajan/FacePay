@@ -44,9 +44,9 @@ def index():
         img_file = open(f'./Faces/{user_user_id}/{req_body[user_id]}{str(index)}.{format}', 'wb')
         img_file.write(decoded_data)
         img_file.close()
-        return_val = [None] * 1
-        t = threading.Thread(target=train_for_a_person, args=(f'{user_user_id}', return_val))
-        t.start()
+    return_val = [None] * 1
+    t = threading.Thread(target=train_for_a_person, args=(f'{user_user_id}', return_val))
+    t.start()
     return f"Training Initiated for user {user_user_id}"
 
 
