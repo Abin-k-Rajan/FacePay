@@ -60,8 +60,10 @@ def normalize(img):
 
 def load_encoding_into_database(encoding):
     collection = database.encoding
-    data = {"encoding": str(encoding), "last-update": datetime.datetime.now()}
-    collection.insert_one(data)
+    for user_id, encode in encoding.items():
+        data = {"user_id": user_id, "encoding": list(encode.tolist()), "last-update": datetime.datetime.now()}
+        collection.insert_one(data)
+    print(f'Encoding updated for user {user_id}')
     # Create a post request to Backend notifying update
 
 def get_all_encodings_from_db():
@@ -118,8 +120,8 @@ def train_for_a_person(face_id, return_val):
         encode = l2_normalizer.transform(np.expand_dims(encode, axis=0))[0]
         encoding_dict[face_id] = encode
     path = f'encodings/encodings{face_id}.pkl'
-    with open(path, 'wb') as file:
-        pickle.dump(encoding_dict, file)
+    # with open(path, 'wb') as file:
+    #     pickle.dump(encoding_dict, file)
     print(f'Saved encoding of user {face_id}')
     th = threading.Thread(target=load_encoding_into_database, args=[encoding_dict])
     th.start()
