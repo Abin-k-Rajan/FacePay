@@ -23,8 +23,11 @@ user_id = 'user_id'
 
 @app.route("/train", methods=['POST'])
 def index():
-    req_body = request.json
-    user_user_id = req_body[user_id]
+    user_user_id = request.args.get('user_id')
+    # return user_user_id
+    # req_body = request.json
+    # print(request)
+    # user_user_id = req_body[user_id]
     if user_user_id not in os.listdir('./Faces'):
         os.mkdir(f'./Faces/{user_user_id}')
     imgs = []
