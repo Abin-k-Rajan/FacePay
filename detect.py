@@ -35,11 +35,13 @@ encodings = []
 def get_all_encodings_from_db():
     collection = database.encoding
     encodings = collection.find()
-    with open(path, 'wb') as file:
-        for encoding in encodings:
-            enc = encoding['encoding']
-            enc = enc
-            enc = json.loads(enc)
+    _encodings = {}
+    for encode in encodings:
+        _encodings[encode['user_id']] = encode['encoding']
+    for user_id, encode in _encodings.items():
+        with open(f'{encodings_path}/{user_id}.pkl', 'wb') as file:
+            enc = {}
+            enc[user_id] = encode
             pickle.dump(enc, file)
         
 
@@ -84,6 +86,8 @@ def get_encode(face_encoder, face, size):
 def load_pickle(path):
     encoding_dict = {}
     for enc in os.listdir(f'./{encodings_path}'):
+        if enc == '.git':
+            continue
         with open(f'./{encodings_path}/{enc}', 'rb') as f:
             encodings.append(pickle.load(f))
     for enc in encodings:
@@ -159,6 +163,7 @@ def detect_opencv(img, coords, encoder, encoding_dict):
 
 
 if __name__ == "__main__":
+    get_all_encodings_from_db()
     required_shape = (160,160)
     face_encoder = InceptionResNetV2()
     path_m = "facenet_keras_weights.h5"
