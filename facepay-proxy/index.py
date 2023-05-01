@@ -85,5 +85,30 @@ def broadcast_to_nodes(path):
 
 
 
+@app.route('/backend-server/<path:path>', defaults={'path': ''}, methods=['GET', 'POST'])
+def backend_server(path):
+    path = request.path
+    path_split = path.split('/')
+    node = path_split[1]
+    path = ''
+    for i in range(2, len(path_split)):
+        path += f'{path_split[i]}/'
+    path = path[:-1]
+    query_var = request.args.to_dict()
+    query_string = ''
+    for key, val in query_var.items():
+        query_string += f'{key}={val}&'
+    query_string = query_string[:-1]
+    if 'backend-server' not in iP_addresses.keys():
+        return 'BACKEND SERVER DOWN'
+    else:
+        ip = iP_addresses['backend-server']
+        if request.method == 'GET':
+            return get(f'http://{ip}/{path}?{query_string}').content
+        elif request.method == 'POST':
+            return post(f'http://{ip}/{path}?{query_string}').content
+    return "No Suitable Methods in PROXY"
+
+
 
 app.run(host='0.0.0.0', port=5000, debug=True)
