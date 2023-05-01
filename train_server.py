@@ -7,8 +7,12 @@ from flask import request
 import re
 from train_v2 import train_for_a_person
 import threading
+from flask_cors import CORS, cross_origin
+
+
 
 app = Flask(__name__)
+CORS(app)
 
 local = 'mongodb://127.0.0.1:27017'
 server = 'mongodb+srv://usn012y2018:facepay1@facepay.y1chyja.mongodb.net/?retryWrites=true&w=majority'
@@ -22,6 +26,7 @@ user_name = 'user_name'
 user_id = 'user_id'
 
 @app.route("/train", methods=['POST'])
+@cross_origin()
 def index():
     user_user_id = request.args.get('user_id')
     # return user_user_id
@@ -60,6 +65,6 @@ if __name__ == '__main__':
     if 'Faces' not in os.listdir():
         os.makedirs('Faces')
     try:
-        app.run(port=9000)
+        app.run(host='0.0.0.0', port=9000)
     except:
         print('Could not start server')

@@ -7,9 +7,11 @@ from flask import request, Response
 import re
 from detect import *
 import threading
+from flask_cors import CORS, cross_origin
 
 
 app = Flask(__name__)
+CORS(app)
 
 local = 'mongodb://127.0.0.1:27017'
 server = 'mongodb+srv://usn012y2018:facepay1@facepay.y1chyja.mongodb.net/?retryWrites=true&w=majority'
@@ -20,6 +22,7 @@ database = client.facepay
 
 
 @app.route("/update-encodings", methods=['POST'])
+@cross_origin()
 def update_encodings():
     print('Updating encodings')
     req_body = request.json
@@ -30,6 +33,7 @@ def update_encodings():
     return Response(status=404, response=res['message'])
 
 @app.route("/update-encoding-for-user", methods=['POST'])
+@cross_origin()
 def update_encoding_for_user():
     req_body = request.json
     user_id = req_body['user_id']
@@ -78,7 +82,7 @@ if __name__=='__main__':
     
 
     try:
-        app.run(port=9090)
+        app.run(host='0.0.0.0', port=9090)
     except:
         print('Could not start server')
     
