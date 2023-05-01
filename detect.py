@@ -176,7 +176,7 @@ def detect(img ,detector,encoder):
             cv2.rectangle(img, pt_1, pt_2, (0, 255, 0), 2)
             cv2.putText(img, name + f'__{distance:.2f}', (pt_1[0], pt_1[1] - 5), cv2.FONT_HERSHEY_SIMPLEX, 1,
                         (0, 200, 200), 2)
-    return {"img": img, "name": name, "dist": distance} 
+    return {"img": img, "id": name, "dist": distance} 
 
 
 def detect_opencv(img, coords, encoder, encoding_dict):

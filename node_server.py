@@ -15,8 +15,15 @@ import requests
 app = Flask(__name__)
 CORS(app)
 
+NODE = ''
+proxy_address = '127.0.0.1'
 local = 'mongodb://127.0.0.1:27017'
 server = 'mongodb+srv://usn012y2018:facepay1@facepay.y1chyja.mongodb.net/?retryWrites=true&w=majority'
+
+
+name = 'unknown'
+balance = 'unknown'
+status = 'unknown'
 
 
 client = MongoClient(server)
@@ -44,9 +51,24 @@ def update_encoding_for_user():
     return Response(status=404, response=res['message'])
 
 
+def user_entry_or_exit(userID):
+    global NODE
+    global name
+    global status
+    global balance
+    response = requests.post(f'http://{proxy_address}:5000/backend-server/validate?userID={userID}&stationID={NODE}')
+    sample_json = '\{"name" : "John", "status" : "Active", "balance": 78\}'
+    name = "John"
+    status = 'Active'
+    balance = 78
+    
+
 
 
 def capture_camera(face_detector , face_encoder):
+    global name
+    global status
+    global balance
     cap = cv2.VideoCapture(0)
     frames = []
     while cap.isOpened():
@@ -58,11 +80,29 @@ def capture_camera(face_detector , face_encoder):
         # coords = face_cascade.detectMultiScale(frame,scaleFactor=1.1, minNeighbors=5)
         res= detect(frame , face_detector , face_encoder)
         # frame = detect_opencv(frame, coords, face_encoder , encoding_dict)
+        if res['id'] != name and res['id'] != 'unknown':
+            t = threading.Thread(target = user_entry_or_exit, args = [res['id']])
+            t.start()
+            name = res['id']
+        img = res['img']
 
-        cv2.imshow('camera', res['img'])
+        cv2.putText(img, f'Name: {name}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        cv2.putText(img, f'Status: {status}', (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        cv2.putText(img, f'Balance: {balance}', (10, 110), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        # cv2.putText(img, balance, 12, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 1)
+        cv2.imshow('FACEPAY', img)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
+
+
+def set_station_id(station_id):
+    global NODE
+    NODE = station_id
+
+def set_proxy_address(proxy):
+    global proxy_address
+    proxy_address = proxy
 
 
 
@@ -72,8 +112,10 @@ if __name__=='__main__':
         print('Error in Usage: python node_server.py station_id proxy_ip')
     else:
         NODE = sys.argv[1]
+        set_station_id(NODE)
         proxy_address = sys.argv[2]
-        response = requests.post(f'http://192.168.1.2:5000/init?node={NODE}&port={PORT}')
+        set_proxy_address(proxy_address)
+        response = requests.post(f'http://{proxy_address}:5000/init?node={NODE}&port={PORT}')
         get_all_encodings_from_db()
         required_shape = (160,160)
         face_encoder = InceptionResNetV2()
