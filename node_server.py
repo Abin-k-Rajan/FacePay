@@ -8,6 +8,8 @@ import re
 from detect import *
 import threading
 from flask_cors import CORS, cross_origin
+import sys
+import requests
 
 
 app = Flask(__name__)
@@ -35,8 +37,7 @@ def update_encodings():
 @app.route("/update-encoding-for-user", methods=['POST'])
 @cross_origin()
 def update_encoding_for_user():
-    req_body = request.json
-    user_id = req_body['user_id']
+    user_id = request.args.get('user_id')
     res = get_encoding_for_user(user_id=user_id)
     if res['status'] == True:
         return Response(status=200, response=res['message'])
@@ -66,23 +67,30 @@ def capture_camera(face_detector , face_encoder):
 
 
 if __name__=='__main__':
-    get_all_encodings_from_db()
-    required_shape = (160,160)
-    face_encoder = InceptionResNetV2()
-    path_m = "facenet_keras_weights.h5"
-    face_encoder.load_weights(path_m)
-    encodings_path = './encodings'
-    face_detector = mtcnn.MTCNN()
-    load_pickle(encodings_path)
-    
+    PORT = 9090
+    if len(sys.argv) < 3:
+        print('Error in Usage: python node_server.py station_id proxy_ip')
+    else:
+        NODE = sys.argv[1]
+        proxy_address = sys.argv[2]
+        response = requests.post(f'http://192.168.1.2:5000/init?node={NODE}&port={PORT}')
+        get_all_encodings_from_db()
+        required_shape = (160,160)
+        face_encoder = InceptionResNetV2()
+        path_m = "facenet_keras_weights.h5"
+        face_encoder.load_weights(path_m)
+        encodings_path = './encodings'
+        face_detector = mtcnn.MTCNN()
+        load_pickle(encodings_path)
+        
 
 
-    t = threading.Thread(target=capture_camera,args=(face_detector, face_encoder))
-    t.start()
-    
+        t = threading.Thread(target=capture_camera,args=(face_detector, face_encoder))
+        t.start()
+        
 
-    try:
-        app.run(host='0.0.0.0', port=9090)
-    except:
-        print('Could not start server')
+        try:
+            app.run(host='0.0.0.0', port=PORT)
+        except:
+            print('Could not start server')
     

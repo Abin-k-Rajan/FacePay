@@ -6,6 +6,7 @@ import pickle
 import numpy as np 
 from sklearn.preprocessing import Normalizer
 from tensorflow.keras.models import load_model
+import json
 
 
 import numpy as np
@@ -19,12 +20,19 @@ from pymongo import MongoClient
 import bson
 import time
 import datetime
+import requests
+
+proxy_address = '127.0.0.1'
 
 local = 'mongodb://127.0.0.1:27017'
 server = 'mongodb+srv://usn012y2018:facepay1@facepay.y1chyja.mongodb.net/?retryWrites=true&w=majority'
 
 client = MongoClient(server)
 database = client.facepay
+
+def set_proxy_address(proxy):
+    global proxy_address
+    proxy_address = proxy
 
 
 print("PyTorch version:", torch.__version__)
@@ -68,6 +76,10 @@ def load_encoding_into_database(encoding):
         data = {"user_id": user_id, "encoding": list(encode.tolist()), "last-update": datetime.datetime.now()}
         collection.insert_one(data)
     print(f'Encoding updated for user {user_id}')
+    try:
+        response = requests.post(f'http://{proxy_address}:5000/broadcast-to-nodes/update-encoding-for-user?user_id={user_id}')
+    except Exception as e:
+        print(f'Failed to Ping Backend server : {e}')
     # Create a post request to Backend notifying update
 
 def get_all_encodings_from_db():

@@ -27,6 +27,7 @@ import pickle
 
 encoding_dict = {}
 
+proxy_address = '127.0.0.1'
 local = 'mongodb://127.0.0.1:27017'
 server = 'mongodb+srv://usn012y2018:facepay1@facepay.y1chyja.mongodb.net/?retryWrites=true&w=majority'
 
@@ -36,6 +37,11 @@ path = 'encodings/encodings.pkl'
 
 encodings_path = './encodings'
 encodings = []
+
+
+def set_proxy_address(proxy):
+    global proxy_address
+    proxy_address = proxy
 
 
 def get_all_encodings_from_db():

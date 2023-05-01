@@ -5,9 +5,11 @@ from pymongo import MongoClient
 from flask import Flask
 from flask import request
 import re
-from train_v2 import train_for_a_person
+from train_v2 import train_for_a_person, set_proxy_address
 import threading
 from flask_cors import CORS, cross_origin
+import sys
+import requests
 
 
 
@@ -25,16 +27,8 @@ b64_imgs = 'b64_imgs'
 user_name = 'user_name'
 user_id = 'user_id'
 
-@app.route("/train", methods=['POST'])
-@cross_origin()
-def index():
-    user_user_id = request.args.get('user_id')
-    # return user_user_id
-    # req_body = request.json
-    # print(request)
-    # user_user_id = req_body[user_id]
-    if user_user_id not in os.listdir('./Faces'):
-        os.mkdir(f'./Faces/{user_user_id}')
+
+def start_training(user_user_id):
     imgs = []
     collection = database.images
     cursor = collection.find({"user_id": user_user_id})
@@ -55,16 +49,36 @@ def index():
     return_val = [None] * 1
     t = threading.Thread(target=train_for_a_person, args=(f'{user_user_id}', return_val))
     t.start()
+
+
+@app.route("/train", methods=['POST'])
+@cross_origin()
+def index():
+    user_user_id = request.args.get('user_id')
+    if user_user_id not in os.listdir('./Faces'):
+        os.mkdir(f'./Faces/{user_user_id}')
+    t = threading.Thread(target=start_training, args=[user_user_id])
+    t.start()
     return f"Training Initiated for user {user_user_id}"
 
 
 
 if __name__ == '__main__':
-    if 'encodings' not in os.listdir():
-        os.makedirs('encodings')
-    if 'Faces' not in os.listdir():
-        os.makedirs('Faces')
-    try:
-        app.run(host='0.0.0.0', port=9000)
-    except:
-        print('Could not start server')
+    PORT = 9000
+    NODE = 'train-server'
+    if len(sys.argv) < 2:
+        print('\n\n\n Error in Usage: python train_server.py <Proxy Address>\n\n\n')
+    else:
+        
+        response = requests.post(f'http://192.168.1.2:5000/init?node={NODE}&port={PORT}')
+        print(response.content)
+        proxy_address = sys.argv[1]
+        set_proxy_address(proxy_address)
+        if 'encodings' not in os.listdir():
+            os.makedirs('encodings')
+        if 'Faces' not in os.listdir():
+            os.makedirs('Faces')
+        try:
+            app.run(host='0.0.0.0', port=PORT, debug=True)
+        except:
+            print('Could not start server')
