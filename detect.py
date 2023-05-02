@@ -4,25 +4,15 @@ import mtcnn
 from architecture import *
 from train_v2 import normalize,l2_normalizer
 from scipy.spatial.distance import cosine
-from tensorflow.keras.models import load_model
 import pickle
-import mediapipe as mp
 from facenet_pytorch import MTCNN
 from pymongo import MongoClient
-import json
 import os
 from datetime import datetime
 import threading
-
-
 import numpy as np
 import torch
 import cv2
-
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import math
-
 import pickle
 
 encoding_dict = {}
@@ -145,7 +135,6 @@ def load_pickle(path=''):
 def detect(img ,detector,encoder):
     global encoding_dict
     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    mp_face_detection = mp.solutions.face_detection
     mtcnn = MTCNN()
     face, prob = mtcnn.detect(img_rgb)
     # results = detector.detect_faces(img_rgb)
