@@ -10,7 +10,8 @@ import threading
 from flask_cors import CORS, cross_origin
 import sys
 import requests
-
+import json
+import winsound
 
 app = Flask(__name__)
 CORS(app)
@@ -49,26 +50,35 @@ def update_encoding_for_user():
     if res['status'] == True:
         return Response(status=200, response=res['message'])
     return Response(status=404, response=res['message'])
+# {
+#     "userID": "644fe5fc1969ae2368f6ba33",
+#     "fullName": "John Doe",
+#     "email": "johndoe@email.com",
+#     "userName": "John123",
+#     "phone": "9748285012",
+#     "password": "John123",
+#     "balance": 655.0,
+#     "flag": null
+# }
 
-
-def user_entry_or_exit(userID):
+def user_entry_or_exit(userID, results:list):
     global NODE
-    global name
-    global status
-    global balance
-    response = requests.post(f'http://{proxy_address}:5000/backend-server/validate?userID={userID}&stationID={NODE}')
-    sample_json = '\{"name" : "John", "status" : "Active", "balance": 78\}'
-    name = "John"
-    status = 'Active'
-    balance = 78
+    response = requests.post(f'http://{proxy_address}:5000/backend-server/api/validate?user_id=644fe5fc1969ae2368f6ba33&station_id={NODE}')
+    res_json = json.loads(response.content)
+    winsound.Beep(5000, 700)
+    name = res_json['fullName']
+    status = res_json['flag']
+    balance = res_json['balance']
+    results[0] = name
+    results[1] = status
+    results[2] = balance
     
 
 
 
 def capture_camera(face_detector , face_encoder):
-    global name
-    global status
-    global balance
+    results = ['unknown', 'unknown', 'unknown']
+    _name = 'unknown'
     cap = cv2.VideoCapture(0)
     frames = []
     while cap.isOpened():
@@ -80,15 +90,15 @@ def capture_camera(face_detector , face_encoder):
         # coords = face_cascade.detectMultiScale(frame,scaleFactor=1.1, minNeighbors=5)
         res= detect(frame , face_detector , face_encoder)
         # frame = detect_opencv(frame, coords, face_encoder , encoding_dict)
-        if res['id'] != name and res['id'] != 'unknown':
-            t = threading.Thread(target = user_entry_or_exit, args = [res['id']])
+        if res['id'] != _name and res['id'] != 'unknown':
+            t = threading.Thread(target = user_entry_or_exit, args = (res['id'], results))
             t.start()
-            name = res['id']
+            _name = res['id']
         img = res['img']
 
-        cv2.putText(img, f'Name: {name}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-        cv2.putText(img, f'Status: {status}', (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-        cv2.putText(img, f'Balance: {balance}', (10, 110), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        cv2.putText(img, f'Name: {results[0]}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        cv2.putText(img, f'Status: {results[1]}', (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        cv2.putText(img, f'Balance: {results[2]}', (10, 110), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
         # cv2.putText(img, balance, 12, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 1)
         cv2.imshow('FACEPAY', img)
 

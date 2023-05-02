@@ -69,8 +69,8 @@ if __name__ == '__main__':
     if len(sys.argv) < 2:
         print('\n\n\n Error in Usage: python train_server.py <Proxy Address>\n\n\n')
     else:
-        
-        response = requests.post(f'http://192.168.1.2:5000/init?node={NODE}&port={PORT}')
+        proxy_address = sys.argv[1]
+        response = requests.post(f'http://{proxy_address}:5000/init?node={NODE}&port={PORT}')
         print(response.content)
         proxy_address = sys.argv[1]
         set_proxy_address(proxy_address)

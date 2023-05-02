@@ -14,6 +14,7 @@ import numpy as np
 import torch
 import cv2
 import pickle
+import winsound
 
 encoding_dict = {}
 
@@ -114,6 +115,8 @@ def get_face(img, box):
 
 def get_encode(face_encoder, face, size):
     face = normalize(face)
+    if face is None or face.any() == 0:
+        return None
     face = cv2.resize(face, size)
     encode = face_encoder.predict(np.expand_dims(face, axis=0))[0]
     return encode
@@ -148,6 +151,8 @@ def detect(img ,detector,encoder):
     else:
         face, pt_1, pt_2 = get_face(img_rgb, face)
         encode = get_encode(encoder, face, required_size)
+        if encode is None:
+            return {"img": img, "id": name, "dist": distance}
         encode = l2_normalizer.transform(encode.reshape(1, -1))[0]
         name = 'unknown'
 
